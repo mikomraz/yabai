@@ -70,6 +70,21 @@ void event_loop_reset_open_menus(void)
     });
 }
 
+//
+// NOTE: Some applications (Chrome, Electron apps) send kAXMenuOpenedNotification without a
+// matching kAXMenuClosedNotification. A click dismisses any real menu, so every click also
+// releases the open menus and restores focus_follows_mouse. The click that opens a menu is
+// seen before that menu's MENU_OPENED, so it does not release the menu it opens.
+//
+
+static void release_open_menus(void)
+{
+    if (!open_menus) return;
+
+    g_window_manager.ffm_mode = ffm_value;
+    event_loop_reset_open_menus();
+}
+
 static void window_did_receive_focus(struct window_manager *wm, struct mouse_state *ms, struct window *window)
 {
     struct window *focused_window = window_manager_find_window(wm, wm->focused_window_id);
@@ -1154,6 +1169,8 @@ static EVENT_HANDLER(DISPLAY_RESIZED)
 
 static EVENT_HANDLER(MOUSE_DOWN)
 {
+    release_open_menus();
+
     if (mission_control_is_active())                     goto out;
     if (g_mouse_state.current_action != MOUSE_MODE_NONE) goto out;
 
