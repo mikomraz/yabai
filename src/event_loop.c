@@ -56,6 +56,20 @@ static void set_open_menus(struct application *application, int count)
     }
 }
 
+//
+// NOTE: Called when focus_follows_mouse is set explicitly. Forgets every open menu, so a
+// menu that never reported being closed cannot keep focus_follows_mouse suspended, and
+// a later MENU_CLOSED cannot restore the mode that was active before the change.
+//
+
+void event_loop_reset_open_menus(void)
+{
+    open_menus = 0;
+    table_for (struct application *application, g_window_manager.application, {
+        application->open_menus = 0;
+    });
+}
+
 static void window_did_receive_focus(struct window_manager *wm, struct mouse_state *ms, struct window *window)
 {
     struct window *focused_window = window_manager_find_window(wm, wm->focused_window_id);
